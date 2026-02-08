@@ -94,12 +94,11 @@ fn calculate_distances(image: &Image) -> ImageWithDistances {
             let i = y * image.width + x;
 
             // Get the neighbouring pixels, returning transparent if they're out of bounds.
-            TODO don't let it wrap horizontally
-            let up_left: u32 = if i >= image.width + 1 { image.pixels[i - (image.width + 1)] } else { 0 };
-            let up = if i >= image.width { image.pixels[i - image.width] } else { 0 };
-            let up_right: u32 = if i >= image.width - 1 { image.pixels[i - (image.width - 1)] } else { 0 };
+            let up_left: u32 = if y==0 || x==0 { 0 } else { image.pixels[i - image.width - 1] };
+            let up: u32 = if y==0 { 0 } else { image.pixels[i - image.width] };
+            let up_right: u32 = if y==0 || x==image.width-1 { 0 } else { image.pixels[i - image.width + 1] };
             let center = image.pixels[i];
-            let right = if i + 1 < pixels_len { image.pixels[i + 1] } else { 0 };
+            let right = if x==image.width-1 { 0 } else { image.pixels[i + 1] };
 
             pixels.push(PixelWithDistances {
                 pixel: center,
