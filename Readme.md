@@ -1,6 +1,12 @@
-# CPU-ScaleFX-Rs
+# CPU-ScaleFX-rs
 
 ScaleFX pixel art upcaler, for the CPU, in Rust.
+
+![Sample](https://github.com/chrishulbert/cpu-scalefx-rs/raw/main/readme/sample.png)
+
+![Big](https://github.com/chrishulbert/cpu-scalefx-rs/raw/main/readme/out.big.png)
+
+![Bigger](https://github.com/chrishulbert/cpu-scalefx-rs/raw/main/readme/out.bigger.png)
 
 ## References
 
