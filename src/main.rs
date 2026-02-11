@@ -18,7 +18,7 @@ fn sample() -> (usize, usize, Vec<u32>) {
         b,y,y,y,y,y,g,w,g,y,y,b,
         b,y,g,y,e,e,e,e,e,e,y,b,
         b,e,g,y,w,l,w,w,l,w,y,b,
-        b,b,y,y,w,w,e,e,w,w,y,b,
+        b,y,y,y,w,w,e,e,w,w,y,b,
         b,y,y,e,w,w,w,w,w,w,e,b,
         t,b,e,e,e,w,w,w,w,e,b,t,
         t,t,b,b,e,e,e,e,b,b,t,t,

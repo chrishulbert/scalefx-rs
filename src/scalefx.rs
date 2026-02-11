@@ -2,13 +2,20 @@
 // Pixels are in 0xRRGGBBAA format.
 // Returns width, height, pixels.
 pub fn scale3x(width: usize, height: usize, pixels: &[u32]) -> (usize, usize, Vec<u32>) {
-    let image = BorrowedImage { width, height, pixels };
+    let image = add_transparent_border(width, height, pixels);
     let distances = calculate_distances(&image);
     let corners = calculate_corner_strengths(&distances);
     let configurations = resolve_corner_configurations(&corners);
     let edges = determine_edge_levels(&configurations);
     let big = scale_subpixels(&edges);
-    (big.width, big.height, big.pixels)
+    let sans_border = remove_transparent_border(&big);
+    (sans_border.width, sans_border.height, sans_border.pixels)
+}
+
+// 9x scaling is reasonable; any higher is asking a bit much though.
+pub fn scale9x(width: usize, height: usize, pixels: &[u32]) -> (usize, usize, Vec<u32>) {
+    let (width, height, pixels) = scale3x(width, height, pixels);
+    scale3x(width, height, &pixels)
 }
 
 // ScaleFX options:
@@ -16,19 +23,51 @@ const THRESHOLD: f32 = 0.5; // Min 0.01; max: 1; step: 0.01
 const IS_FILTER_AA_ENABLED: bool = true;
 const FILTER_CORNERS: bool = true; // SFX_SCN in the shader.
 
-#[derive(Debug)]
-struct BorrowedImage<'a> {
-    width: usize,
-    height: usize,
-    pixels: &'a [u32],
+// Adds a 1px transparent border so the algorithm looks nice on edges.
+fn add_transparent_border(width: usize, height: usize, pixels: &[u32]) -> Image {
+    let new_width = width + 2;
+    let new_height = height + 2;
+    let mut out: Vec<u32> = Vec::with_capacity(new_width * new_height);
+    for _ in 0..new_width { out.push(0); } // Top row.
+    for row in pixels.chunks_exact(width) {
+        out.push(0);
+        out.extend_from_slice(row);
+        out.push(0);
+    }
+    for _ in 0..new_width { out.push(0); } // Bottom row.
+    Image {
+        width: new_width,
+        height: new_height,
+        pixels: out,
+    }
 }
 
-const MAX_COLOUR_DISTANCE: f32 = 765.; // Not a custom option, just what colour_distance returns for white vs black.
+// Removes the 3px transparent border after scaling.
+fn remove_transparent_border(image: &Image) -> Image {
+    let new_width = image.width - 6;
+    let new_height = image.height - 6;
+    let mut out: Vec<u32> = Vec::with_capacity(new_width * new_height);
+    for row in image.pixels.chunks_exact(image.width).skip(3).take(new_height) {
+        out.extend_from_slice(&row[3..3+new_width]);
+    }
+    Image {
+        width: new_width,
+        height: new_height,
+        pixels: out,
+    }
+}
+
+#[derive(Debug)]
+struct Image {
+    width: usize,
+    height: usize,
+    pixels: Vec<u32>,
+}
 
 // Determine the human-perceived difference between two colours.
 // For humanity's sake, r and g and b are weighted differently.
 // https://www.compuphase.com/cmetric.htm
-// Returns 0 for same colours; 764.83 for white-black; 765 if any are transparent.
+// Returns 0 for same colours; 1 for white-black/transparent.
 fn colour_distance(a: u32, b: u32) -> f32 {
     let a_r = a >> 24;
     let a_g = (a >> 16) & 0xff;
@@ -41,7 +80,7 @@ fn colour_distance(a: u32, b: u32) -> f32 {
     let b_a = b & 0xff;
 
     if a_a < 0x80 && b_a < 0x80 { return 0. } // Transparent vs transparent counts as the same.
-    if a_a < 0x80 || b_a < 0x80 { return MAX_COLOUR_DISTANCE } // Colour -> transparent counts as different.
+    if a_a < 0x80 || b_a < 0x80 { return 1. } // Colour -> transparent counts as different.
 
     let r_mean = (a_r + b_r) / 2;
     let r = a_r.abs_diff(b_r);
@@ -50,7 +89,7 @@ fn colour_distance(a: u32, b: u32) -> f32 {
 
     if r == 0 && g == 0 && b == 0 { return 0. } // Save the conplicated calculation below.
 
-    (((((512 + r_mean)*r*r)>>8) + 4*g*g + (((767-r_mean)*b*b)>>8)) as f32).sqrt()
+    (((((512 + r_mean)*r*r)>>8) + 4*g*g + (((767-r_mean)*b*b)>>8)) as f32).sqrt() / 765.
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -65,10 +104,10 @@ impl PixelWithDistances {
     fn offscreen() -> Self { // The representation for a transparent offscreen pixel.
         Self {
             pixel: 0,
-            colour_distance_up_left: MAX_COLOUR_DISTANCE,
-            colour_distance_up: MAX_COLOUR_DISTANCE,
-            colour_distance_up_right: MAX_COLOUR_DISTANCE,
-            colour_distance_right: MAX_COLOUR_DISTANCE,
+            colour_distance_up_left: 1.,
+            colour_distance_up: 1.,
+            colour_distance_up_right: 1.,
+            colour_distance_right: 1.,
         }
     }
 }
@@ -83,7 +122,7 @@ struct ImageWithDistances {
 // Calculate the colour distances to neighbours.
 // This implements pass 0 here:
 // https://github.com/libretro/slang-shaders/blob/master/edge-smoothing/scalefx/shaders/scalefx-pass0.slang
-fn calculate_distances(image: &BorrowedImage) -> ImageWithDistances {
+fn calculate_distances(image: &Image) -> ImageWithDistances {
     let mut pixels: Vec<PixelWithDistances> = Vec::with_capacity(image.pixels.len());
     for y in 0..image.height {
         for x in 0..image.width {
@@ -128,10 +167,10 @@ impl PixelWithCornerStrengths {
     fn offscreen() -> Self { // The representation for a transparent offscreen pixel.
         Self {
             pixel: 0,
-            colour_distance_up_left: MAX_COLOUR_DISTANCE,
-            colour_distance_up: MAX_COLOUR_DISTANCE,
-            colour_distance_up_right: MAX_COLOUR_DISTANCE,
-            colour_distance_right: MAX_COLOUR_DISTANCE,
+            colour_distance_up_left: 1.,
+            colour_distance_up: 1.,
+            colour_distance_up_right: 1.,
+            colour_distance_right: 1.,
             corner_strength_up_left: 0.,
             corner_strength_up_right: 0.,
             corner_strength_down_right: 0.,
@@ -478,16 +517,10 @@ fn determine_edge_levels(image: &ImageWithCornerConfigurations) -> ImageWithEdge
     }
 }
 
-struct OwnedImage {
-    width: usize,
-    height: usize,
-    pixels: Vec<u32>,
-}
-
 // Outputs subpixels based on previously calculated tags.
 // This implements pass 4 from here:
 // https://github.com/libretro/slang-shaders/blob/master/edge-smoothing/scalefx/shaders/scalefx-pass4.slang
-fn scale_subpixels(image: &ImageWithEdgeLevels) -> OwnedImage {
+fn scale_subpixels(image: &ImageWithEdgeLevels) -> Image {
     let mut pixels: Vec<u32> = Vec::with_capacity(image.pixels.len() * 9);
     let mut row0: Vec<u32> = Vec::with_capacity(image.width * 3);
     let mut row1: Vec<u32> = Vec::with_capacity(image.width * 3);
@@ -557,7 +590,7 @@ fn scale_subpixels(image: &ImageWithEdgeLevels) -> OwnedImage {
         pixels.extend_from_slice(&row1);
         pixels.extend_from_slice(&row2);
     }
-    OwnedImage {
+    Image {
         width: image.width * 3,
         height: image.height * 3,
         pixels,
