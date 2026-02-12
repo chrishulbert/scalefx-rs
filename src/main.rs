@@ -2,7 +2,22 @@ mod scalefx;
 
 use png::{self, BitDepth, ColorType, Transformations};
 
+// https://patorjk.com/software/taag/#p=display&f=Bloody&t=ScaleFX&x=none
+const LOGO: &str = "
+  ██████  ▄████▄   ▄▄▄       ██▓    ▓█████   █████▒▒██   ██▒
+▒██    ▒ ▒██▀ ▀█  ▒████▄    ▓██▒    ▓█   ▀ ▓██   ▒ ▒▒ █ █ ▒░
+░ ▓██▄   ▒▓█    ▄ ▒██  ▀█▄  ▒██░    ▒███   ▒████ ░ ░░  █   ░
+  ▒   ██▒▒▓▓▄ ▄██▒░██▄▄▄▄██ ▒██░    ▒▓█  ▄ ░▓█▒  ░  ░ █ █ ▒ 
+▒██████▒▒▒ ▓███▀ ░ ▓█   ▓██▒░██████▒░▒████▒░▒█░    ▒██▒ ▒██▒
+▒ ▒▓▒ ▒ ░░ ░▒ ▒  ░ ▒▒   ▓▒█░░ ▒░▓  ░░░ ▒░ ░ ▒ ░    ▒▒ ░ ░▓ ░
+░ ░▒  ░ ░  ░  ▒     ▒   ▒▒ ░░ ░ ▒  ░ ░ ░  ░ ░      ░░   ░▒ ░
+░  ░  ░  ░          ░   ▒     ░ ░      ░    ░ ░     ░    ░  
+      ░  ░ ░            ░  ░    ░  ░   ░  ░         ░    ░  
+         ░                                                  
+";
+
 fn main() {
+    println!("{}", LOGO.trim());
     println!("-=[ ScaleFX-rs Pixel Art Upscaler ]=-");
 
     let args: Vec<String> = std::env::args().collect();
