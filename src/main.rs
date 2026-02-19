@@ -51,7 +51,7 @@ fn load_png(path: &str) -> (usize, usize, Vec<u32>) {
     let in_file = std::fs::File::open(path).expect("Failed to open file!");
     let in_reader = std::io::BufReader::new(in_file);
     let mut decoder = png::Decoder::new(in_reader);
-    decoder.set_transformations(Transformations::ALPHA); // Auto-converts to 8-bit RGBA.
+    decoder.set_transformations(Transformations::ALPHA | Transformations::STRIP_16); // Auto-converts to 8-bit RGBA.
     let mut reader = decoder.read_info().expect("Failed to read header");
     let mut buf = vec![0; reader.output_buffer_size().unwrap()];
     let info = reader.next_frame(&mut buf).expect("Failed to decode");

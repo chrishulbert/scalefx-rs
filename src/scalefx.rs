@@ -496,7 +496,6 @@ fn determine_edge_levels(image: &ImageWithCornerConfigurations) -> ImageWithEdge
 	        let crn_w = if lvl1w && eo.w || lvl3w.x && eo.z || lvl4w.x && dr.w || lvl6w.x && fo.z { 7 } else { if lvl1w || lvl3w.y && !eo.x || lvl4w.y && !ho.w || lvl6w.y && !bo.x { 1 } else { if lvl3w.x { 3 } else { if lvl3w.y { 5 } else { if lvl4w.x { 2 } else { if lvl4w.y { 8 } else { if lvl6w.x { 4 } else { if lvl6w.y { 6 } else { 0 }}}}}}}};
             let corners = U8Vec4 { x: crn_x, y: crn_y, z: crn_z, w: crn_w };
 
-            // TODO hope the precedence of the no-brackets nested ?: was resolved correctly below:
             let mid_x = if lvl2x.x &&  eo.x || lvl2x.y &&  eo.y || lvl5x.x &&  dr.x || lvl5x.y &&  fo.y { 5 } else { if lvl2x.x { 1 } else { if lvl2x.y { 3 } else { if lvl5x.x { 2 } else { if lvl5x.y { 4 } else { if ec.x && dc.z && ec.y && fc.w { if  eo.x { if  eo.y { 5 } else { 3 }} else { 1 }} else {0}}}}}};
             let mid_y = if lvl2y.x && !eo.y || lvl2y.y && !eo.z || lvl5y.x && !bo.y || lvl5y.y && !ho.z { 3 } else { if lvl2y.x { 5 } else { if lvl2y.y { 7 } else { if lvl5y.x { 6 } else { if lvl5y.y { 8 } else { if ec.y && bc.w && ec.z && hc.x { if !eo.y { if !eo.z { 3 } else { 7 }} else { 5 }} else {0}}}}}};
             let mid_z = if lvl2z.x &&  eo.w || lvl2z.y &&  eo.z || lvl5z.x &&  dr.w || lvl5z.y &&  fo.z { 7 } else { if lvl2z.x { 1 } else { if lvl2z.y { 3 } else { if lvl5z.x { 2 } else { if lvl5z.y { 4 } else { if ec.z && fc.x && ec.w && dc.y { if  eo.z { if  eo.w { 7 } else { 1 }} else { 3 }} else {0}}}}}};
